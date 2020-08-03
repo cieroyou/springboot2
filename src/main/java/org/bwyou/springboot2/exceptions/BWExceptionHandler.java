@@ -11,7 +11,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.util.AntPathMatcher;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.ModelAndView;
 
 public class BWExceptionHandler {
@@ -102,12 +105,20 @@ public class BWExceptionHandler {
 	}
 	
 	private WebException getWebException(Exception exraw) {
-		WebException ex = null;
 		if (exraw instanceof WebException) {
-			ex = (WebException) exraw;
-		} else {
-			ex = new WebException(exraw);
+			return (WebException) exraw;
+		} 
+		
+		if(exraw instanceof HttpRequestMethodNotSupportedException || exraw instanceof MethodArgumentTypeMismatchException) {
+			// URL을 찾을 수 없을 때 
+			return new NotFoundWebException(exraw);
 		}
-		return ex;
+		
+		if(exraw instanceof HttpMessageNotReadableException) {
+			// RequestBody가 비었을 때
+			return new BadRequestWebException(exraw);
+		}
+		
+		return new WebException(exraw);
 	}
 }
